@@ -1,0 +1,79 @@
+{
+  "about": {
+    "file": "kdk.rules.json",
+    "source": "BfArM 'Qualitätskontrolle der eingelieferten klinischen Daten durch klinische Datenknoten (KDK)', MV GenomSeq, Version 01.2 (01.06.2026), Tabelle 1 (Kriterien 1-12).",
+    "applies_to": "KDK Datenkranz: oncology (case.diagnosisOd) and rare-disease (case.diagnosisRd) branches. Off unless enabled with --kdk-rules.",
+    "field_mapping_note": "The QS document names fields loosely (e.g. 'submissionDate', 'AllgemeineDaten/birthDate', 'followUpOd/...'); the params below use the ACTUAL KDK JSON paths verified against the schema + synthetic data (metaData.submission.date, metaData.birthDate, followUp.followUpOds[].*).",
+    "not_implemented_here": "Criterion 2 (LE-ID list) and 11 (own node id) need external resources -> id_in_list / id_equals_config SKIP (info) unless supplied via --rules-config. Criterion 4 (terminology resolvability) is covered by the schema/terminology tooling, not a semantic rule.",
+    "engine": "primitives are implemented in rules.py; the engine reads id/primitive/severity/params only."
+  },
+  "rules": [
+    {"id": "kdk-1-age", "primitive": "age_years_range", "severity": "error",
+     "doc": "Kriterium 1: age at report time in [0,130] years (submission.date YYYY - birthDate YYYY).",
+     "params": {"from": "metaData.birthDate", "to": "metaData.submission.date", "min": 0, "max": 130}},
+
+    {"id": "kdk-2-le-id", "primitive": "id_in_list", "severity": "error",
+     "doc": "Kriterium 2: submitterId must be a known 64e LE id (and admitted for the diseaseType). Needs the BfArM LE-ID CSV via --rules-config {le_ids:[...]}. Disease-subset admission is not modelled here.",
+     "params": {"path": "metaData.submission.submitterId", "config_key": "le_ids"}},
+
+    {"id": "kdk-3-index-consent-sequencing", "primitive": "array_contains", "severity": "error",
+     "doc": "Kriterium 3: index must consent to sequencing: an mvConsent.scope entry with type=permit AND domain=mvSequencing.",
+     "params": {"array": "metaData.mvConsent.scope", "where": {"type": "permit", "domain": "mvSequencing"}}},
+
+    {"id": "kdk-5-tnm-one-each", "primitive": "tnm_one_each", "severity": "error",
+     "doc": "Kriterium 5: when TNM is present, exactly one code each for T, N and M.",
+     "params": {"array": "case.diagnosisOd.tnmClassifications"}},
+
+    {"id": "kdk-6-no-date-before-birth", "primitive": "all_dates_not_before", "severity": "error",
+     "doc": "Kriterium 6: no date-format field may lie before the (minimal) birthDate floor (YYYY-MM-01).",
+     "params": {"floor": "metaData.birthDate"}},
+
+    {"id": "kdk-7-dates-before-decision", "primitive": "all_dates_before_by_condition", "severity": "error",
+     "doc": "Kriterium 7: for submission.type=initial all date fields must precede molecularBoardDecisionDate; for followup they must precede the follow-up date. Excludes researchConsents.presentationDate and submission.date. (type=test: no anchor -> skipped.)",
+     "params": {"condition": "metaData.submission.type",
+                "cases": {"initial": "metaData.molecularBoardDecisionDate",
+                          "followup": "followUp.followUpOds.0.followUpDate"},
+                "exclude_regex": ["/researchConsents/\\d+/presentationDate$", "^/metaData/submission/date$", "/molecularBoardDecisionDate$"]}},
+
+    {"id": "kdk-8-presentation-le-signature", "primitive": "date_order", "severity": "error",
+     "doc": "Kriterium 8: mvConsent.presentationDate must not be after the signature date mvConsent.scope[].date.",
+     "params": {"before": "metaData.mvConsent.presentationDate", "after": "metaData.mvConsent.scope[].date", "allow_equal": true}},
+
+    {"id": "kdk-9a-decision-after-consent", "primitive": "date_order", "severity": "error",
+     "doc": "Kriterium 9: the molecular board decision (Fallkonferenz) must not be before the MV consent signature.",
+     "params": {"before": "metaData.mvConsent.scope[].date", "after": "metaData.molecularBoardDecisionDate", "allow_equal": true}},
+
+    {"id": "kdk-9b-consented-actions-after-consent", "primitive": "dates_after", "severity": "error",
+     "doc": "Kriterium 9: dated actions/decisions requiring prior consent must lie on/after the MV consent signature date.",
+     "params": {"anchor": "metaData.mvConsent.scope[].date",
+                "paths": ["metaData.submission.date",
+                          "plan.carePlanOd.molecularBoardDecisionDate",
+                          "followUp.followUpOds[].followUpDate",
+                          "followUp.followUpOds[].additionalDiagnoses[].date",
+                          "followUp.followUpOds[].lastContactDate",
+                          "followUp.followUpOds[].deathDate",
+                          "followUp.followUpOds[].therapies[].therapyStartDate",
+                          "followUp.followUpOds[].therapies[].therapyEndDate",
+                          "followUp.followUpOds[].therapies[].therapyResponseDate",
+                          "followUp.followUpOds[].preventiveMeasures[].preventiveMeasureDate",
+                          "plan.carePlanRd.molecularBoardDecisionDate",
+                          "followUp.followUpRds[].followUpDate",
+                          "followUp.followUpRds[].deathDate"]}},
+
+    {"id": "kdk-10-rare-librarytype", "primitive": "enum_by_condition", "severity": "error",
+     "doc": "Kriterium 10: for rare disease, panel/WES are excluded -> libraryType in {wgs, wgs_lr, none}.",
+     "params": {"condition": "metaData.submission.diseaseType", "equals": "rare",
+                "paths": ["case.diagnosisOd.libraryType", "case.diagnosisRd.libraryType"],
+                "allowed": ["wgs", "wgs_lr", "none"]}},
+
+    {"id": "kdk-11-node-id", "primitive": "id_equals_config", "severity": "error",
+     "doc": "Kriterium 11: clinicalDataNodeId must equal the receiving KDK's own id. Supply via --rules-config {clinical_data_node_id:'...'}.",
+     "params": {"path": "metaData.submission.clinicalDataNodeId", "config_key": "clinical_data_node_id"}},
+
+    {"id": "kdk-12-noscope-justification", "primitive": "enum_allowed", "severity": "error",
+     "doc": "Kriterium 12: research-consent noScopeJustification limited to patient-related reasons; the two technical/organizational values are no longer allowed.",
+     "params": {"path": "metaData.researchConsents[].noScopeJustification",
+                "allowed": ["patient unable to consent", "patient refuses to sign consent",
+                            "patient did not return consent documents", "other patient-related reason"]}}
+  ]
+}

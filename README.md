@@ -64,6 +64,38 @@ r.ok(strict=True)   # False if any unknown fields
 Each `Finding` has `.kind` (`"schema"`/`"unknown"`), `.path` (JSON pointer), `.message`,
 and `.validator` (the failing JSON-Schema keyword, for schema errors).
 
+## Semantic rules (BfArM Qualitätssicherung)
+
+Beyond schema + unknown-field checks, the validator can enforce the BfArM **quality-assurance**
+criteria (QS durch KDK v01.2; QS durch GRZ v01.4) as **JSON-defined semantic rules** — the
+mechanics are adopted from mzPeakValidator: rules are *data*, each an instance of a named
+*primitive* (implemented in `rules.py`); the engine reads only `id / primitive / severity / params`.
+Rule files: `src/genomde_dk_validator/rules/{kdk,grz}.rules.json`.
+
+Rules are **off by default** and opt-in per data set:
+
+```bash
+genomde-dk-validator --kdk-rules  kdk_data/     # enforce the 12 KDK QS criteria
+genomde-dk-validator --grz-rules  grz_data/     # enforce the GRZ QS criteria
+genomde-dk-validator --kdk-rules --rules-config cfg.json  data/
+```
+
+**Sanity check:** `--kdk-rules` on a GRZ file (or vice-versa) fails with a `*-sanity` error — the
+detected branch must match the requested rule set (KDK = oncology/rare-disease, GRZ = grz).
+
+**External inputs** (`--rules-config cfg.json`) — some criteria need data not in the JSON; without
+the config those rules *skip* (info):
+```json
+{ "clinical_data_node_id": "KDKTUE005", "genomic_data_center_id": "GRZTUE002", "le_ids": ["260840108"] }
+```
+
+Coverage: KDK criteria 1,3,5,6,7,8,9,10,12 are fully enforced; 2 (LE-ID list) and 11 (own node id)
+need `--rules-config`; 4 (terminology resolvability) is handled by the schema/terminology tooling.
+GRZ Tabelle-1 criteria (rare→libraryType, centre-id, noScopeJustification) are enforced; the GRZ
+Detailprüfung QC thresholds (depth/read-length/quality) and raw-data checks run on FASTQ/BAM, not
+JSON — out of scope here (see `grz.rules.json` `about`). See `docs/`/`about` blocks for the mapping
+of each criterion to its actual JSON path.
+
 ## Branch → schema
 
 | detected by | branch | root schema |

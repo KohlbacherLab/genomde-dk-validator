@@ -37,7 +37,7 @@ genomde-dk-validator = "genomde_dk_validator.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-genomde_dk_validator = ["schemas/**/*.json", "schemas/**/*.md", "schemas/*.md"]
+genomde_dk_validator = ["schemas/**/*.json", "schemas/**/*.md", "schemas/*.md", "rules/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -65,3 +65,41 @@ def test_no_unknown_flag(onc):
     d["bogusTopLevel"] = 1
     r = DatenkranzValidator(check_unknown=False).validate(d)
     assert r.unknown_fields == []
+
+
+# --- semantic rules (BfArM QS) ---
+
+def test_grz_rules_sanity_on_kdk(v, onc):
+    r = v.validate(onc, "onc", rules="grz")
+    assert any(f.rule_id == "grz-sanity" and f.level == "error" for f in r.rule_findings)
+
+
+def test_kdk12_forbidden_noscope(v, onc):
+    d = copy.deepcopy(onc)
+    d["metaData"]["researchConsents"][0]["noScopeJustification"] = \
+        "consent is not implemented at LE due to organizational issues"
+    d["metaData"]["researchConsents"][0].pop("scope", None)
+    ids = {f.rule_id for f in v.validate(d, rules="kdk").rule_errors}
+    assert "kdk-12-noscope-justification" in ids
+
+
+def test_kdk10_rare_librarytype(v, onc):
+    d = copy.deepcopy(onc)
+    d["metaData"]["submission"]["diseaseType"] = "rare"
+    d["case"]["diagnosisOd"]["libraryType"] = "panel"   # panel excluded for rare
+    ids = {f.rule_id for f in v.validate(d, rules="kdk").rule_errors}
+    assert "kdk-10-rare-librarytype" in ids
+
+
+def test_kdk3_index_consent_and_config_skip(v, onc):
+    d = copy.deepcopy(onc)
+    d["metaData"]["mvConsent"]["scope"] = [{"type": "deny", "domain": "mvSequencing", "date": "2026-03-24"}]
+    findings = v.validate(d, rules="kdk").rule_findings
+    assert any(f.rule_id == "kdk-3-index-consent-sequencing" and f.level == "error" for f in findings)
+    # external-resource rules skip (info) with no config
+    assert any(f.rule_id == "kdk-11-node-id" and f.level == "info" for f in findings)
+
+
+def test_kdk11_config_enforced(v, onc):
+    r = v.validate(onc, rules="kdk", rules_config={"clinical_data_node_id": "WRONG-NODE"})
+    assert any(f.rule_id == "kdk-11-node-id" and f.level == "error" for f in r.rule_errors)

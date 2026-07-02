@@ -36,6 +36,9 @@ ROOTS = {  # branch -> root schema URI in the store
     "grz": GRZ_URL,
 }
 
+# which detected branches each semantic rule set legitimately applies to (sanity check)
+RULESET_BRANCHES = {"kdk": {"oncology", "rare-disease"}, "grz": {"grz"}}
+
 
 def _schema_root():
     return resources.files(__package__) / "schemas"
@@ -163,15 +166,20 @@ class Result:
     branch: str
     schema_errors: list[Finding] = field(default_factory=list)
     unknown_fields: list[Finding] = field(default_factory=list)
+    rule_findings: list = field(default_factory=list)   # list[rules.RuleFinding]
 
     @property
     def has_schema(self) -> bool:
         return self.branch in ROOTS
 
+    @property
+    def rule_errors(self) -> list:
+        return [f for f in self.rule_findings if f.level in ("error", "fatal")]
+
     def ok(self, strict: bool = False) -> bool:
         if not self.has_schema:
             return False
-        if self.schema_errors:
+        if self.schema_errors or self.rule_errors:
             return False
         return not (strict and self.unknown_fields)
 
@@ -188,10 +196,13 @@ class DatenkranzValidator:
         }
         self.check_unknown = check_unknown
 
-    def validate(self, dk: Any, name: str = "<data>") -> Result:
+    def validate(self, dk: Any, name: str = "<data>", rules: str | None = None,
+                 rules_config: dict | None = None) -> Result:
         branch = classify(dk)
         res = Result(file=name, branch=branch)
         if branch not in ROOTS:
+            if rules:  # sanity: asked to run a rule set on something that isn't KDK/GRZ
+                res.rule_findings.append(self._sanity(rules, branch))
             return res
         v = self._validators[branch]
         for e in sorted(v.iter_errors(dk), key=lambda e: list(e.absolute_path)):
@@ -200,9 +211,23 @@ class DatenkranzValidator:
         if self.check_unknown:
             for p in _walk_unknown(dk, self._store[ROOTS[branch]], ROOTS[branch], self._store):
                 res.unknown_fields.append(Finding("unknown", p, "field not declared in schema"))
+        if rules:
+            expected = RULESET_BRANCHES.get(rules, set())
+            if branch not in expected:
+                res.rule_findings.append(self._sanity(rules, branch))
+            else:
+                from . import rules as _rules
+                res.rule_findings.extend(_rules.run_rules(self, dk, branch, rules, rules_config))
         return res
 
-    def validate_file(self, path) -> Result:
+    @staticmethod
+    def _sanity(ruleset: str, branch: str):
+        from .rules import RuleFinding
+        return RuleFinding(f"{ruleset}-sanity", "branch_check", "error",
+                           f"--{ruleset}-rules requested but this is not a {ruleset.upper()} "
+                           f"Datenkranz (detected branch: {branch})")
+
+    def validate_file(self, path, rules: str | None = None, rules_config: dict | None = None) -> Result:
         import pathlib
         p = pathlib.Path(path)
         try:
@@ -211,4 +236,4 @@ class DatenkranzValidator:
             r = Result(file=str(p), branch="unreadable")
             r.schema_errors.append(Finding("schema", "(file)", f"unreadable: {e}"))
             return r
-        return self.validate(dk, name=str(p))
+        return self.validate(dk, name=str(p), rules=rules, rules_config=rules_config)
