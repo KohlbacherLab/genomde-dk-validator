@@ -191,6 +191,15 @@ def test_cli_verbosity_gates_warnings(tmp_path, onc, capsys):
     main(["-v", warn]); assert "bogusField" in capsys.readouterr().out # shown with -v
 
 
+def test_cli_clean_pass_is_minimal(tmp_path, onc, capsys):
+    from genomde_dk_validator.cli import main
+    src = _mk(tmp_path, onc, lambda d: None)
+    assert main([src]) == 0
+    out = capsys.readouterr().out
+    assert out.strip() == "PASS"                                      # no header/summary/hint w/o -v
+    main(["-v", src]); assert "===" in capsys.readouterr().out        # -v brings back the summary
+
+
 def test_cli_output_file(tmp_path, onc, capsys):
     from genomde_dk_validator.cli import main
     src = _mk(tmp_path, onc, lambda d: None)

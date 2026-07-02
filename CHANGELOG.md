@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+- Minimal default output: without `-v`, a clean run prints just `PASS` and a failing run prints only
+  the error findings + `FAIL (N)`. The header, summary block, and "lower-severity hidden" hint now
+  appear only with `-v`/`-vv`.
+
 ## 1.1.0
 - **Verbosity levels**: text output shows **errors only** by default; `-v` adds warnings, `-vv` adds
   info (rules skipped for missing `--rules-config`). Hidden lower-severity findings are counted with a

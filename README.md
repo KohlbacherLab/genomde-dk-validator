@@ -30,7 +30,8 @@ genomde-dk-validator FILE|DIR|GLOB ...     # schema + unknown-field check (recur
 Exit codes: `0` clean · `3` warnings only (e.g. unknown fields, non-strict) · `1` errors
 (schema error, rule error, or `--strict` unknowns) · `2` usage error / no input.
 Findings have three levels — **error** (always shown), **warning** (unknown fields; `-v`),
-**info** (rules skipped for missing `--rules-config`; `-vv`).
+**info** (rules skipped for missing `--rules-config`; `-vv`). Default output is minimal — just `PASS`,
+or the error findings + `FAIL (N)`; `-v`/`-vv` add the header, summary, and lower levels.
 Branch is auto-detected → root schema:
 
 | detected by | branch | schema |

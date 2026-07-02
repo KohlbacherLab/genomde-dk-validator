@@ -124,25 +124,26 @@ def main(argv: list[str] | None = None) -> int:
             print(text)
         return code
 
-    # text report
-    per_branch = collections.Counter(r.branch for r in results)
+    # text report. Default (no -v) is minimal: just the error findings + a one-line verdict.
+    # -v/-vv add the header + summary block, the extra finding levels, and the hidden-count hint.
     verdict = "PASS" if not failed else f"FAIL ({failed} file(s))"
     if not failed and n_warn:
         verdict += f", {n_warn} warning(s)"
-    print(f"\n=== genomDE Datenkranz schema validation ({len(files)} files) ===")
-    print(f"branches: {dict(per_branch)}{'  | rules: '+ruleset.upper() if ruleset else ''}")
-    print(f"schema-invalid: {n_schema} | warnings: {n_warn}"
-          f"{' | rule-violations: '+str(n_rule) if ruleset else ''}"
-          f"{f' | info skipped (need --rules-config): {n_info}' if n_info else ''}"
-          f" | no-schema (branch): {n_noschema}")
-    print(f"verdict: {verdict}   [exit {code}]")
+
+    if a.verbose >= 1:
+        per_branch = collections.Counter(r.branch for r in results)
+        print(f"\n=== genomDE Datenkranz schema validation ({len(files)} files) ===")
+        print(f"branches: {dict(per_branch)}{'  | rules: '+ruleset.upper() if ruleset else ''}")
+        print(f"schema-invalid: {n_schema} | warnings: {n_warn}"
+              f"{' | rule-violations: '+str(n_rule) if ruleset else ''}"
+              f"{f' | info skipped (need --rules-config): {n_info}' if n_info else ''}"
+              f" | no-schema (branch): {n_noschema}")
 
     if not a.quiet:
         levels = {"error"}                       # default: errors only
         if a.verbose >= 1: levels.add("warning")  # -v
         if a.verbose >= 2: levels.add("info")     # -vv
         shown = more = hidden = 0
-        printed_any = False
         for r in results:
             items = [("error", f"schema/{e.validator}", e) for e in r.schema_errors]
             items += [(unk_level, "unknown-field", e) for e in r.unknown_fields]
@@ -154,17 +155,16 @@ def main(argv: list[str] | None = None) -> int:
                 if shown >= a.show:
                     more += 1
                     continue
-                if not printed_any:
-                    print(); printed_any = True
                 where = f"{r.file}:{e.line}:{e.col}" if getattr(e, "line", None) else r.file
                 print(f"  [{level:7} {tag}] {where}  {e.path}: {e.message[:110]}")
                 shown += 1
         if more:
             print(f"  … {more} more shown-level finding(s) — raise --show or use -o for the full report")
-        if hidden:
-            tip = {0: "-v for warnings, -vv for info", 1: "-vv for info"}.get(a.verbose, "")
-            print(f"  … {hidden} lower-severity finding(s) hidden" + (f" ({tip})" if tip else ""))
+        if hidden and a.verbose >= 1:          # only hint about lower levels once the user opted into -v
+            print(f"  … {hidden} lower-severity finding(s) hidden"
+                  + (" (-vv for info)" if a.verbose == 1 else ""))
 
+    print(f"verdict: {verdict}   [exit {code}]" if a.verbose >= 1 else verdict)
     return code
 
 
