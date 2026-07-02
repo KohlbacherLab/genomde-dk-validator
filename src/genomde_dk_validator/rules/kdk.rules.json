@@ -33,7 +33,7 @@
      "params": {"condition": "metaData.submission.type",
                 "cases": {"initial": "metaData.molecularBoardDecisionDate",
                           "followup": "followUp.followUpOds.0.followUpDate"},
-                "exclude_regex": ["/researchConsents/\\d+/presentationDate$", "^/metaData/submission/date$", "/molecularBoardDecisionDate$"]}},
+                "exclude_regex": ["/researchConsents/\\d+/presentationDate$", "^/metaData/submission/date$", "^/metaData/molecularBoardDecisionDate$"]}},
 
     {"id": "kdk-8-presentation-le-signature", "primitive": "date_order", "severity": "error",
      "doc": "Kriterium 8: mvConsent.presentationDate must not be after the signature date mvConsent.scope[].date.",

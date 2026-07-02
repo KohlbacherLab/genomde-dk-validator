@@ -44,6 +44,8 @@ def resolve(inst: Any, path: str) -> Iterator[tuple[str, Any]]:
                     yield from rec(el, rest, f"{ptr}/{i}")
         elif isinstance(node, dict) and t in node:
             yield from rec(node[t], rest, f"{ptr}/{t}")
+        elif isinstance(node, list) and t.isdigit() and int(t) < len(node):
+            yield from rec(node[int(t)], rest, f"{ptr}/{t}")
 
     yield from rec(inst, toks, "")
 
