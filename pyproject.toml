@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genomde-dk-validator"
-version = "0.9.0"
+version = "0.9.1"
 description = "Validate genomDE Datenkranz JSON against the BfArM MVGenomseq JSON Schemas (KDK + GRZ), including unknown-field detection."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [{ name = "KohlbacherLab" }]
 keywords = ["fhir", "genomde", "bfarm", "datenkranz", "json-schema", "mii", "kdk", "grz", "validation"]
@@ -19,8 +19,8 @@ classifiers = [
     "Intended Audience :: Healthcare Industry",
 ]
 dependencies = [
-    "jsonschema>=4.18",    # Draft 2020-12 support
-    "referencing>=0.28",   # offline $ref registry (imported directly)
+    "jsonschema>=4.18",    # Draft 2020-12 + the `referencing` registry (Python >= 3.8)
+    "referencing>=0.28",   # imported directly for offline $ref resolution
 ]
 
 [project.optional-dependencies]

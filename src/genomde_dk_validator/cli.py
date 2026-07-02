@@ -45,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="emit a machine-readable JSON report to stdout")
     ap.add_argument("--quiet", "-q", action="store_true",
                     help="summary only; do not list per-file findings")
-    ap.add_argument("--show", type=int, default=15, help="max error patterns per branch (text mode)")
+    ap.add_argument("--show", type=int, default=40, help="max findings listed in text mode (use --json for all)")
     a = ap.parse_args(argv)
 
     if a.kdk_rules and a.grz_rules:
@@ -101,23 +101,24 @@ def main(argv: list[str] | None = None) -> int:
           f"{' [strict: unknown=error]' if a.strict else ''}")
 
     if not a.quiet:
-        # aggregate error patterns per branch
-        pats = collections.defaultdict(collections.Counter)
+        # per-finding list with input-file line:col (best for debugging); capped by --show
+        unk_level = "error" if a.strict else "warning"
+        shown = more = 0
+        print()
         for r in results:
-            for e in r.schema_errors:
-                pats[r.branch][("schema", e.validator, e.path, e.message[:70])] += 1
-            for e in r.unknown_fields:
-                pats[r.branch][("unknown", None, e.path, "field not in schema")] += 1
-            for e in r.rule_findings:
-                if e.level in ("error", "fatal"):
-                    pats[r.branch][("rule:" + e.rule_id, None, e.path, e.message[:70])] += 1
-        for branch, ctr in pats.items():
-            if not ctr:
-                continue
-            print(f"\n--- {branch}: top findings ---")
-            for (kind, val, path, msg), n in ctr.most_common(a.show):
-                tag = "UNKNOWN" if kind == "unknown" else kind if kind.startswith("rule:") else f"schema/{val}"
-                print(f"  {n:5}x [{tag}] {path}: {msg}")
+            items = [("error", f"schema/{e.validator}", e) for e in r.schema_errors]
+            items += [(unk_level, "unknown-field", e) for e in r.unknown_fields]
+            items += [(e.level, f"rule:{e.rule_id}" + ("(skip)" if e.level == "info" else ""), e)
+                      for e in r.rule_findings]
+            for level, tag, e in items:
+                if shown >= a.show:
+                    more += 1
+                    continue
+                where = f"{r.file}:{e.line}:{e.col}" if getattr(e, "line", None) else r.file
+                print(f"  [{level:7} {tag}] {where}  {e.path}: {e.message[:110]}")
+                shown += 1
+        if more:
+            print(f"  … {more} more finding(s) — use --json for the full report")
 
     return 1 if failed else 0
 

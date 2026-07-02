@@ -9,7 +9,11 @@ Qualitätssicherung semantic rules**.
 ```bash
 pip install git+https://github.com/KohlbacherLab/genomde-dk-validator.git   # or: pip install .
 ```
-Python ≥ 3.9 (uses `jsonschema` ≥ 4.18).
+**Python ≥ 3.8** (uses `jsonschema` ≥ 4.18). The Anaconda **base** env is often Python 3.7 (EOL) —
+there the install is refused with a clear message; use a ≥3.8 interpreter, e.g.
+`python3.11 -m pip install …` or `conda create -n dkv python=3.11` first.
+
+Every finding reports its location in the input file as `file:line:col`.
 
 ## CLI
 ```bash

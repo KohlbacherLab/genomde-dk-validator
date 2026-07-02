@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.1
+- **Findings now report `file:line:col`** in the input file (pure-Python JSON source-position map),
+  and the text report lists findings per file with their location instead of cross-file patterns.
+- Top-level JSON meta-key `$schema` is no longer flagged as an unknown field.
+- **Python floor is ≥ 3.8** (`jsonschema` ≥ 4.18 needs it). On Python 3.7 (Anaconda base) `pip` now
+  refuses cleanly (`requires a different Python`) instead of the confusing `jsonschema` resolution
+  error. `referencing` is declared explicitly.
+
 ## 0.9.0
 First tagged pre-release.
 

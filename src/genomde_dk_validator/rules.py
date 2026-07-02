@@ -74,6 +74,8 @@ class RuleFinding:
     level: str          # "error" | "warning" | "info"
     message: str
     path: str = ""
+    line: int | None = None   # 1-based source location in the input file (set by validate_file)
+    col: int | None = None
 
 
 class _Ctx:
