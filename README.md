@@ -57,7 +57,7 @@ Tabelle-1 (rare→libraryType, centre-id, noScopeJustification). GRZ Detailprüf
 runs on FASTQ/BAM, not JSON.
 
 **Two interchangeable rule backends** (same criteria, same results — verified identical on the whole
-synthetic corpus, 1098 KDK + 1000 GRZ):
+synthetic corpus, 1182 KDK + 1006 GRZ):
 - **primitive** (default) — the built-in engine, no extra dependency.
 - **FHIRPath invariants** (`--fhirpath`, needs the `fhirpath` extra) — each rule authored like a FHIR
   `ElementDefinition.constraint` (`key`/`severity`/`human`/`expression`) evaluated over the plain

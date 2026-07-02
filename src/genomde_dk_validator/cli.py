@@ -8,7 +8,7 @@ import json
 import os
 import sys
 
-from .validator import DatenkranzValidator, ROOTS
+from .validator import DatenkranzValidator
 
 
 def _discover(paths: list[str]) -> list[str]:
@@ -74,6 +74,13 @@ def main(argv: list[str] | None = None) -> int:
     if a.fhirpath and not ruleset:
         print("--fhirpath only applies with --kdk-rules/--grz-rules", file=sys.stderr)
         return 2
+    if a.fhirpath:
+        try:
+            import fhirpathpy  # noqa: F401
+        except ImportError:
+            print("--fhirpath needs the 'fhirpath' extra: "
+                  "pip install 'genomde-dk-validator[fhirpath]'", file=sys.stderr)
+            return 2
     engine = "fhirpath" if a.fhirpath else "primitive"
     v = DatenkranzValidator(check_unknown=not a.no_unknown)
     results = [v.validate_file(f, rules=ruleset, rules_config=rules_config, rules_engine=engine)
@@ -82,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     n_err = sum(1 for r in results if r.schema_errors)
     n_unknown = sum(1 for r in results if r.unknown_fields)
     n_rule = sum(1 for r in results if r.rule_errors)
+    n_skip = sum(1 for r in results for f in r.rule_findings if f.level == "info")
     n_noschema = sum(1 for r in results if not r.has_schema)
     failed = sum(1 for r in results if not r.ok(strict=a.strict))
 
@@ -104,7 +112,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"branches: {dict(per_branch)}"
           f"{'  | rules: '+ruleset.upper() if ruleset else ''}")
     print(f"schema-invalid: {n_err} | with unknown fields: {n_unknown}"
-          f"{' | rule-violations: '+str(n_rule) if ruleset else ''} | no-schema (branch): {n_noschema}")
+          f"{' | rule-violations: '+str(n_rule) if ruleset else ''}"
+          f"{f' | rules-skipped (need --rules-config): {n_skip}' if n_skip else ''}"
+          f" | no-schema (branch): {n_noschema}")
     print(f"verdict: {'PASS' if not failed else f'FAIL ({failed} file(s))'}"
           f"{' [strict: unknown=error]' if a.strict else ''}")
 

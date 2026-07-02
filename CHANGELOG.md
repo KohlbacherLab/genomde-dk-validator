@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0
+Correctness + cleanup pass (both rule engines stay byte-identical on the corpus: 1182 KDK + 1006 GRZ).
+- **FHIRPath date rules complete**: rules 6/7 now enumerate the full schema-derived set of
+  `format:date` paths (24; was missing `case.priorProcedures.therapyResponseDate`,
+  `case.priorRds.diagnosticDate`, `followUp.followUpOds.additionalDiagnoses.date`) — the union is
+  generated from the schema, not hand-listed.
+- **TNM invariant (rule 5) aligned to the primitive**: reads the T/N/M category from `display`, `text`
+  *or* `code`, token anywhere (was `display`-only, anchored) — no longer diverges on code-only TNM.
+- **Malformed JSON** reports the syntax-error `line:col` (was dropped).
+- **Unclassifiable input** emits an actionable `(root)` finding instead of a silent fail.
+- Source-position map uses stdlib `json.decoder.scanstring` (correct escape / surrogate-pair handling).
+- `--fhirpath` without the extra fails cleanly (exit 2) instead of a traceback; config-gated
+  **rules-skipped** count is surfaced in the summary so a gated PASS isn't misleading.
+- Cleanup: dropped the dead pre-3.8 `referencing` fallback, `_make_validator`, `CATALOG_VERSION`,
+  and an unused import; the offline registry is built once.
+
 ## 0.10.0
 - **FHIRPath invariant rule backend** (`--fhirpath`, optional `[fhirpath]` extra): the BfArM QS
   criteria authored as FHIR-`constraint`-style invariants (key/severity/human/expression/source) and

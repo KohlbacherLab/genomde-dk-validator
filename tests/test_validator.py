@@ -137,6 +137,28 @@ def test_fhirpath_config_skip_and_enforce(v, onc):
     assert "kdk-11-node-id" in errs           # enforced with config
 
 
+def test_malformed_json_reports_line(v, tmp_path):
+    bad = tmp_path / "bad.json"
+    bad.write_text('{\n  "a": 1,\n  "b": 2\n  "c": 3\n}\n')   # missing comma on line 4
+    r = v.validate_file(bad)
+    assert not r.ok() and r.schema_errors[0].line == 4
+
+
+def test_no_schema_branch_has_finding(v):
+    r = v.validate({"metadata": {}})                          # legacy variant -> no root schema
+    assert r.branch == "legacy-variant" and not r.ok()
+    assert any(f.path == "(root)" for f in r.schema_errors)   # actionable, not a silent fail
+
+
+def test_tnm_code_only_equivalent(v, onc):
+    import copy
+    d = copy.deepcopy(onc)
+    d["case"]["diagnosisOd"]["tnmClassifications"] = [{"code": "cT2"}, {"code": "cN0"}]  # no M, category in code
+    prim = {f.rule_id for f in v.validate(d, rules="kdk", rules_engine="primitive").rule_errors}
+    fhir = {f.rule_id for f in v.validate(d, rules="kdk", rules_engine="fhirpath").rule_errors}
+    assert "kdk-5-tnm-one-each" in prim and prim == fhir      # both read category from `code`, not just display
+
+
 def test_date_tuple_rejects_junk():
     from genomde_dk_validator.rules import _date_tuple
     assert _date_tuple("2026-04-21") == (2026, 4, 21)

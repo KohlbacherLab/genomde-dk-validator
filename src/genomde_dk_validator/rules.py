@@ -24,8 +24,6 @@ from typing import Any, Callable, Iterator
 
 from . import validator as _V
 
-CATALOG_VERSION = 1
-
 
 # --------------------------------------------------------------------------- paths & dates
 

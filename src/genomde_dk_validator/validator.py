@@ -23,16 +23,8 @@ from importlib import resources
 from typing import Any, Iterator
 
 from jsonschema import Draft202012Validator, FormatChecker
-
-# `referencing` is the modern (jsonschema >= 4.18, Python >= 3.8) $ref registry. On older jsonschema
-# (down to 4.0 on Python 3.7) it is absent — fall back to the legacy RefResolver so the package still
-# installs and runs. The unknown-field walker uses its own store-based resolver either way.
-try:
-    from referencing import Registry
-    from referencing.jsonschema import DRAFT202012
-    _HAVE_REFERENCING = True
-except ImportError:  # pragma: no cover - exercised on old jsonschema
-    _HAVE_REFERENCING = False
+from referencing import Registry
+from referencing.jsonschema import DRAFT202012
 
 # canonical URLs the vendored schemas use / are published at
 KDK_BASE = "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/"
@@ -73,20 +65,11 @@ def _build_store() -> dict[str, Any]:
     return store
 
 
-def _build_registry(store: dict[str, Any]):
+def _build_registry(store: dict[str, Any]) -> Registry:
+    """One offline registry for every vendored schema — $refs resolve against it, no network."""
     return Registry().with_resources(
         [(uri, DRAFT202012.create_resource(contents)) for uri, contents in store.items()]
     )
-
-
-def _make_validator(schema, uri, store):
-    """A Draft 2020-12 validator whose $refs resolve offline against `store`."""
-    if not _HAVE_REFERENCING:
-        raise RuntimeError(
-            "genomde-dk-validator requires jsonschema >= 4.18 with the 'referencing' package "
-            "(Python >= 3.8). Install under Python >= 3.8, e.g. `python3.11 -m pip install ...`.")
-    return Draft202012Validator(schema, registry=_build_registry(store),
-                                format_checker=FormatChecker())   # instance form is version-portable
 
 
 # --------------------------------------------------------------------------- branch
@@ -118,19 +101,8 @@ def _source_map(text: str) -> dict[str, tuple]:
         return i
 
     def string(i):                       # text[i] == '"'; returns (value, next_i)
-        j = i + 1
-        buf = []
-        while j < n:
-            c = text[j]
-            if c == "\\":
-                e = text[j + 1]
-                if e == "u":
-                    buf.append(chr(int(text[j + 2:j + 6], 16))); j += 6; continue
-                buf.append({"n": "\n", "t": "\t", "r": "\r", "b": "\b", "f": "\f"}.get(e, e)); j += 2; continue
-            if c == '"':
-                return "".join(buf), j + 1
-            buf.append(c); j += 1
-        raise ValueError("unterminated string")
+        # stdlib decoder: correct escape + surrogate-pair handling, same rules as json.loads
+        return json.decoder.scanstring(text, i + 1)
 
     def value(i, ptr):
         i = ws(i)
@@ -318,8 +290,10 @@ class DatenkranzValidator:
 
     def __init__(self, check_unknown: bool = True):
         self._store = _build_store()
-        self._validators = {b: _make_validator(self._store[uri], uri, self._store)
-                            for b, uri in ROOTS.items()}
+        registry = _build_registry(self._store)   # built once, shared by all branch validators
+        self._validators = {
+            b: Draft202012Validator(self._store[uri], registry=registry, format_checker=FormatChecker())
+            for b, uri in ROOTS.items()}
         self.check_unknown = check_unknown
 
     def validate(self, dk: Any, name: str = "<data>", rules: str | None = None,
@@ -327,6 +301,10 @@ class DatenkranzValidator:
         branch = classify(dk)
         res = Result(file=name, branch=branch)
         if branch not in ROOTS:
+            res.schema_errors.append(Finding(   # actionable row instead of a silent fail
+                "schema", "(root)",
+                f"could not classify as a KDK/GRZ Datenkranz (detected branch: {branch}); "
+                "expected case.diagnosisOd | case.diagnosisRd | donors+submission"))
             if rules:  # sanity: asked to run a rule set on something that isn't KDK/GRZ
                 res.rule_findings.append(self._sanity(rules, branch))
             return res
@@ -365,7 +343,9 @@ class DatenkranzValidator:
             dk = json.loads(text)
         except Exception as e:
             r = Result(file=str(p), branch="unreadable")
-            r.schema_errors.append(Finding("schema", "(file)", f"unreadable: {e}"))
+            ln = getattr(e, "lineno", None)   # JSONDecodeError carries the syntax-error position
+            r.schema_errors.append(Finding("schema", "(file)", f"unreadable: {e}",
+                                           line=ln, col=getattr(e, "colno", None)))
             return r
         res = self.validate(dk, name=str(p), rules=rules, rules_config=rules_config, rules_engine=rules_engine)
         smap = _source_map(text)          # attach input-file line/col to every finding
