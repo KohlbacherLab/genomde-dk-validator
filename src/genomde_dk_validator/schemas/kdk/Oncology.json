@@ -1,0 +1,27 @@
+{
+  "$id": "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/Oncology.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Oncology Data Schema",
+  "type": "object",
+  "required": [
+    "metaData",
+    "case"
+  ],
+  "properties": {
+    "metaData": {
+      "$ref": "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/Submission.json"
+    },
+    "case": {
+      "$ref": "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/OncologyCase.json"
+    },
+    "molecular": {
+      "$ref": "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/OncologyMolecular.json"
+    },
+    "plan": {
+        "$ref": "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/OncologyPlan.json"
+    },
+    "followUp": {
+        "$ref": "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/OncologyFollowUp.json"
+    }
+  }
+}

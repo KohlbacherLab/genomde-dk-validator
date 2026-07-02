@@ -1,0 +1,7 @@
+{
+  "$id": "https://raw.githubusercontent.com/BfArM-MVH/MVGenomseq_KDK/main/KDK/data-types/Identifier.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Identifier",
+  "description": "A base identifier type.",
+  "type": "string"
+}

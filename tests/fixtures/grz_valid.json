@@ -1,0 +1,204 @@
+{
+ "donors": [
+  {
+   "donorPseudonym": "1b18f6491e921118f00493454550d073",
+   "gender": "male",
+   "labData": [
+    {
+     "barcode": "ATCG01",
+     "enrichmentKitDescription": "EnrichKit-01",
+     "enrichmentKitManufacturer": "Illumina",
+     "fragmentationMethod": "sonication",
+     "kitManufacturer": "Illumina",
+     "kitName": "Kit-seq-01",
+     "labDataName": "labData-01",
+     "libraryPrepKit": "Kit-01",
+     "libraryPrepKitManufacturer": "Illumina",
+     "libraryType": "wes",
+     "sampleConservation": "fresh-tissue",
+     "sampleDate": "2026-04-01",
+     "sequenceData": {
+      "bioinformaticsPipelineName": "pipeline-synth",
+      "bioinformaticsPipelineVersion": "1.0.0",
+      "callerUsed": [
+       {
+        "name": "DRAGEN",
+        "version": "4.2.4"
+       }
+      ],
+      "files": [
+       {
+        "fileChecksum": "23c0219262f379d718ef641a7489f9f9e069d819b6fca2d395c1751353799754",
+        "filePath": "d-01/R1.fastq.gz",
+        "fileSizeInBytes": 1234567,
+        "fileType": "fastq",
+        "readLength": 150,
+        "readOrder": "R1"
+       },
+       {
+        "fileChecksum": "2cacdc007989a11548559124f979792d9ec3f2f969b68c0624e977562c7c9358",
+        "filePath": "d-01/R2.fastq.gz",
+        "fileSizeInBytes": 1234568,
+        "fileType": "fastq",
+        "readLength": 150,
+        "readOrder": "R2"
+       }
+      ],
+      "meanDepthOfCoverage": 100,
+      "minCoverage": 20,
+      "nonCodingVariants": false,
+      "percentBasesAboveQualityThreshold": {
+       "minimumQuality": 30,
+       "percent": 95.5
+      },
+      "referenceGenome": "GRCh38",
+      "targetedRegionsAboveMinCoverage": 0.98
+     },
+     "sequenceSubtype": "germline",
+     "sequenceType": "dna",
+     "sequencerManufacturer": "Illumina",
+     "sequencerModel": "NovaSeq6000",
+     "sequencingLayout": "paired-end",
+     "tissueOntology": {
+      "name": "BRENDA",
+      "version": "2024"
+     },
+     "tissueTypeId": "BTO:0000089",
+     "tissueTypeName": "blood",
+     "tumorCellCount": [
+      {
+       "count": 75,
+       "method": "pathology"
+      }
+     ]
+    }
+   ],
+   "mvConsent": {
+    "presentationDate": "2026-04-01",
+    "scope": [
+     {
+      "date": "2026-04-01",
+      "domain": "mvSequencing",
+      "type": "permit"
+     }
+    ],
+    "version": "Patient Info TE Consent MVGenomSeq vers01"
+   },
+   "relation": "index",
+   "researchConsents": [
+    {
+     "presentationDate": "2026-04-01",
+     "schemaVersion": "2025.0.1",
+     "scope": {}
+    }
+   ]
+  },
+  {
+   "donorPseudonym": "dd359b20eacafd37d7d68451a4cb8d60",
+   "gender": "male",
+   "labData": [
+    {
+     "barcode": "ATCG02",
+     "enrichmentKitDescription": "EnrichKit-02",
+     "enrichmentKitManufacturer": "Illumina",
+     "fragmentationMethod": "sonication",
+     "kitManufacturer": "Illumina",
+     "kitName": "Kit-seq-02",
+     "labDataName": "labData-02",
+     "libraryPrepKit": "Kit-02",
+     "libraryPrepKitManufacturer": "Illumina",
+     "libraryType": "wgs",
+     "sampleConservation": "fresh-tissue",
+     "sampleDate": "2026-04-01",
+     "sequenceData": {
+      "bioinformaticsPipelineName": "pipeline-synth",
+      "bioinformaticsPipelineVersion": "1.0.0",
+      "callerUsed": [
+       {
+        "name": "DRAGEN",
+        "version": "4.2.4"
+       }
+      ],
+      "files": [
+       {
+        "fileChecksum": "9fb35d7774b15cb78133c48259848cf99fbef1e647ecc6fc6c7b3ab5ba4903f4",
+        "filePath": "d-02/R1.fastq.gz",
+        "fileSizeInBytes": 1234567,
+        "fileType": "fastq",
+        "readLength": 150,
+        "readOrder": "R1"
+       },
+       {
+        "fileChecksum": "c0403d2d3cc7ab79a381e94c7618948f5c39ed2137beb27730b73b87f99e8963",
+        "filePath": "d-02/R2.fastq.gz",
+        "fileSizeInBytes": 1234568,
+        "fileType": "fastq",
+        "readLength": 150,
+        "readOrder": "R2"
+       }
+      ],
+      "meanDepthOfCoverage": 100,
+      "minCoverage": 20,
+      "nonCodingVariants": false,
+      "percentBasesAboveQualityThreshold": {
+       "minimumQuality": 30,
+       "percent": 95.5
+      },
+      "referenceGenome": "GRCh38",
+      "targetedRegionsAboveMinCoverage": 0.98
+     },
+     "sequenceSubtype": "germline",
+     "sequenceType": "dna",
+     "sequencerManufacturer": "Illumina",
+     "sequencerModel": "NovaSeq6000",
+     "sequencingLayout": "paired-end",
+     "tissueOntology": {
+      "name": "BRENDA",
+      "version": "2024"
+     },
+     "tissueTypeId": "BTO:0000089",
+     "tissueTypeName": "blood",
+     "tumorCellCount": [
+      {
+       "count": 75,
+       "method": "pathology"
+      }
+     ]
+    }
+   ],
+   "mvConsent": {
+    "presentationDate": "2026-04-01",
+    "scope": [
+     {
+      "date": "2026-04-01",
+      "domain": "mvSequencing",
+      "type": "permit"
+     }
+    ],
+    "version": "Patient Info TE Consent MVGenomSeq vers01"
+   },
+   "relation": "other",
+   "researchConsents": [
+    {
+     "presentationDate": "2026-04-01",
+     "schemaVersion": "2025.0.1",
+     "scope": {}
+    }
+   ]
+  }
+ ],
+ "submission": {
+  "clinicalDataNodeId": "KDKTUE005",
+  "coverageType": "GKV",
+  "diseaseType": "oncological",
+  "genomicDataCenterId": "GRZTUE002",
+  "genomicStudySubtype": "tumor+germline",
+  "genomicStudyType": "trio",
+  "labName": "GRZ-Lab-Synth-Edge",
+  "localCaseId": "edge-multi-donor-01",
+  "submissionDate": "2026-04-21",
+  "submissionType": "correction",
+  "submitterId": "260840108",
+  "tanG": "29f65b8735ded7d4af4366b40815ba5eaf18f115a92fe5fc0f5f120044396465"
+ }
+}

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "genomde-dk-validator"
+version = "0.1.0"
+description = "Validate genomDE Datenkranz JSON against the BfArM MVGenomseq JSON Schemas (KDK + GRZ), including unknown-field detection."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "KohlbacherLab" }]
+keywords = ["fhir", "genomde", "bfarm", "datenkranz", "json-schema", "mii", "kdk", "grz", "validation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Intended Audience :: Healthcare Industry",
+]
+dependencies = [
+    "jsonschema>=4.18",   # Draft 2020-12 + the `referencing` registry
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/KohlbacherLab/genomde-dk-validator"
+Repository = "https://github.com/KohlbacherLab/genomde-dk-validator"
+Issues = "https://github.com/KohlbacherLab/genomde-dk-validator/issues"
+
+[project.scripts]
+genomde-dk-validator = "genomde_dk_validator.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+genomde_dk_validator = ["schemas/**/*.json", "schemas/**/*.md", "schemas/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
