@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.2
+- Unknown-field detection ignores all `$`-prefixed JSON Schema / structural meta-keys (`$schema`, `$id`, `$ref`, `$comment`, …) at any level — they are annotations/hints, not Datenkranz data fields. (Schema validation itself is unchanged: it uses `jsonschema` and already permits them since the BfArM schemas don't set `additionalProperties:false`.)
+
 ## 0.9.1
 - **Findings now report `file:line:col`** in the input file (pure-Python JSON source-position map),
   and the text report lists findings per file with their location instead of cross-file patterns.

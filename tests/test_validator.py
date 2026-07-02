@@ -53,6 +53,15 @@ def test_unknown_field_detection(v, onc):
     assert r.ok(strict=True) is False     # error under --strict
 
 
+def test_meta_keys_not_flagged(v, onc):
+    d = copy.deepcopy(onc)
+    d["$schema"] = "https://example.org/grz-schema.json"     # editor hint at root
+    d["$comment"] = "x"
+    d["case"]["$id"] = "y"                                    # nested meta-key
+    paths = {f.path for f in v.validate(d).unknown_fields}
+    assert not any(p.split("/")[-1].startswith("$") for p in paths)
+
+
 def test_schema_error(v, onc):
     d = copy.deepcopy(onc)
     del d["metaData"]                     # required

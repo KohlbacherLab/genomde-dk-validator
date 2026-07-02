@@ -91,8 +91,11 @@ def _make_validator(schema, uri, store):
 
 # --------------------------------------------------------------------------- branch
 
-# JSON meta-keys that are not Datenkranz data fields and must not be flagged as "unknown".
-_META_KEYS = {"$schema"}
+def _is_meta_key(key: str) -> bool:
+    """`$`-prefixed keys are JSON Schema / structural meta-keywords ($schema, $id, $ref, $comment,
+    $defs, $anchor, $vocabulary, $dynamicRef, ...), never genomDE Datenkranz data fields — so they
+    are annotations/hints, not unknown data. genomDE field names are camelCase words."""
+    return key.startswith("$")
 
 
 def _source_map(text: str) -> dict[str, tuple]:
@@ -266,7 +269,7 @@ def _walk_unknown(instance, schema, cur_uri, store, path="") -> Iterator[str]:
                 if key in props:
                     sub, suri = props[key]
                     yield from _walk_unknown(instance[key], sub, suri, store, f"{path}/{key}")
-                elif not (path == "" and key in _META_KEYS):   # ignore top-level $schema etc.
+                elif not _is_meta_key(key):     # ignore JSON Schema meta-keys ($schema, $id, ...)
                     yield f"{path}/{key}"
     elif isinstance(instance, list) and items is not None:
         isch, iuri = items
