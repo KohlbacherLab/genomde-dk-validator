@@ -44,14 +44,23 @@ def _schema_root():
     return resources.files(__package__) / "schemas"
 
 
+def _iter_json(trav, prefix=""):
+    """Recurse a Traversable yielding (relative_posix_path, resource) for *.json — uses only the
+    portable importlib.resources API (iterdir/is_dir/name), so it works from a zip wheel too."""
+    for entry in trav.iterdir():
+        rel = f"{prefix}{entry.name}"
+        if entry.is_dir():
+            yield from _iter_json(entry, prefix=f"{rel}/")
+        elif entry.name.endswith(".json"):
+            yield rel, entry
+
+
 def _build_store() -> dict[str, Any]:
     """uri -> schema contents for every vendored schema file."""
     root = _schema_root()
     store: dict[str, Any] = {}
-    kdk = root / "kdk"
-    for f in kdk.rglob("*.json"):
-        rel = f.relative_to(kdk).as_posix()
-        store[KDK_BASE + rel] = json.loads(f.read_text(encoding="utf-8"))
+    for rel, res in _iter_json(root / "kdk"):     # OncologyCase.json | data-types/Coding.json | ...
+        store[KDK_BASE + rel] = json.loads(res.read_text(encoding="utf-8"))
     store[GRZ_URL] = json.loads((root / "grz" / "grz-schema.json").read_text(encoding="utf-8"))
     return store
 
@@ -69,7 +78,8 @@ def classify(dk: Any) -> str:
         return "unknown"
     if "donors" in dk and "submission" in dk:
         return "grz"
-    case = dk.get("case") or {}
+    case = dk.get("case")
+    case = case if isinstance(case, dict) else {}
     if "diagnosisOd" in case:
         return "oncology"
     if "diagnosisRd" in case:
@@ -191,7 +201,8 @@ class DatenkranzValidator:
         self._store = _build_store()
         self._registry = _build_registry(self._store)
         self._validators = {
-            b: Draft202012Validator(self._store[uri], registry=self._registry)
+            b: Draft202012Validator(self._store[uri], registry=self._registry,
+                                    format_checker=Draft202012Validator.FORMAT_CHECKER)
             for b, uri in ROOTS.items()
         }
         self.check_unknown = check_unknown
@@ -205,7 +216,7 @@ class DatenkranzValidator:
                 res.rule_findings.append(self._sanity(rules, branch))
             return res
         v = self._validators[branch]
-        for e in sorted(v.iter_errors(dk), key=lambda e: list(e.absolute_path)):
+        for e in sorted(v.iter_errors(dk), key=lambda e: [str(p) for p in e.absolute_path]):
             loc = "/" + "/".join(str(p) for p in e.absolute_path) if e.absolute_path else "(root)"
             res.schema_errors.append(Finding("schema", loc, e.message[:300], e.validator))
         if self.check_unknown:

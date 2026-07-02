@@ -51,14 +51,20 @@ def resolve(inst: Any, path: str) -> Iterator[tuple[str, Any]]:
 
 
 def _date_tuple(s: Any):
-    """Parse 'YYYY', 'YYYY-MM', 'YYYY-MM-DD' -> (y,m,d) with missing parts = 1 (floor)."""
+    """Parse 'YYYY' | 'YYYY-MM' | 'YYYY-MM-DD' -> (y,m,d), missing parts = 1 (floor).
+    End-anchored + calendar-validated: junk like '2026-99-99x' or '2026-13' returns None."""
     if not isinstance(s, str):
         return None
-    m = re.match(r"^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?", s)
+    m = re.fullmatch(r"(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?", s.strip())
     if not m:
         return None
-    y, mo, d = m.group(1), m.group(2), m.group(3)
-    return (int(y), int(mo) if mo else 1, int(d) if d else 1)
+    y, mo, d = int(m.group(1)), int(m.group(2) or 1), int(m.group(3) or 1)
+    try:
+        import datetime
+        datetime.date(y, mo, d)
+    except ValueError:
+        return None
+    return (y, mo, d)
 
 
 @dataclass
@@ -312,13 +318,14 @@ def run_rules(validator, dk, branch: str, ruleset: str, config: dict | None = No
         fn = _REGISTRY.get(prim)
         rid, sev = rule.get("id", "?"), rule.get("severity", "error")
         if fn is None:
-            findings.append(RuleFinding(rid, prim or "?", "warning", f"unknown primitive {prim!r}"))
+            # rules are explicitly requested here, so a rule that cannot run must FAIL, not pass
+            findings.append(RuleFinding(rid, prim or "?", "error", f"unknown primitive {prim!r}"))
             continue
         try:
             for f in fn(dk, rule.get("params", {}), ctx):
                 f.rule_id, f.primitive = rid, prim
                 f.level = f.level or sev   # primitive may downgrade to info (skips)
                 findings.append(f)
-        except Exception as e:  # a broken rule must not crash validation
-            findings.append(RuleFinding(rid, prim, "warning", f"rule error: {type(e).__name__}: {e}"))
+        except Exception as e:  # a broken rule must not crash validation — but must not pass silently
+            findings.append(RuleFinding(rid, prim, "error", f"rule error: {type(e).__name__}: {e}"))
     return findings

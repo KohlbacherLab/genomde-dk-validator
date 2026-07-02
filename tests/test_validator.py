@@ -103,3 +103,20 @@ def test_kdk3_index_consent_and_config_skip(v, onc):
 def test_kdk11_config_enforced(v, onc):
     r = v.validate(onc, rules="kdk", rules_config={"clinical_data_node_id": "WRONG-NODE"})
     assert any(f.rule_id == "kdk-11-node-id" and f.level == "error" for f in r.rule_errors)
+
+
+# --- robustness / review fixes ---
+
+@pytest.mark.parametrize("bad", [None, 42, "x", [1, 2], {"case": "notadict"}, {"case": []}])
+def test_hostile_input_no_crash(v, bad):
+    r = v.validate(bad, "hostile")        # must not raise
+    assert r.branch in ("grz", "oncology", "rare-disease", "legacy-variant", "unknown")
+
+
+def test_date_tuple_rejects_junk():
+    from genomde_dk_validator.rules import _date_tuple
+    assert _date_tuple("2026-04-21") == (2026, 4, 21)
+    assert _date_tuple("1975-08") == (1975, 8, 1)
+    assert _date_tuple("2026-99-99x") is None
+    assert _date_tuple("2026-13") is None
+    assert _date_tuple("notadate") is None

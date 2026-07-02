@@ -20,7 +20,8 @@ def _discover(paths: list[str]) -> list[str]:
             files.append(p)
         else:
             files += glob.glob(p, recursive=True)
-    return sorted(set(files))
+    # dedup by resolved path; keep only real files (a glob/dir can surface directories)
+    return sorted({os.path.realpath(f) for f in files if os.path.isfile(f)})
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -57,6 +58,9 @@ def main(argv: list[str] | None = None) -> int:
             rules_config = json.loads(open(a.rules_config, encoding="utf-8").read())
         except Exception as e:
             print(f"could not read --rules-config {a.rules_config}: {e}", file=sys.stderr)
+            return 2
+        if not isinstance(rules_config, dict):
+            print(f"--rules-config must be a JSON object, got {type(rules_config).__name__}", file=sys.stderr)
             return 2
 
     files = _discover(a.paths)
