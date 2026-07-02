@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+- **Verbosity levels**: text output shows **errors only** by default; `-v` adds warnings, `-vv` adds
+  info (rules skipped for missing `--rules-config`). Hidden lower-severity findings are counted with a
+  hint. `-q` stays "verdict + summary only".
+- **Severity-based exit codes**: `0` clean · `3` warnings only (e.g. non-strict unknown fields) ·
+  `1` errors · `2` usage/no-input. (Previously warnings-only also returned `0`.)
+- **`-o FILE`** writes the JSON report (all findings, ignoring `-v`) to a file; `--json` still prints
+  it to stdout. JSON now carries a top-level `exit_code` and `summary` block.
+
 ## 1.0.0
 Correctness + cleanup pass (both rule engines stay byte-identical on the corpus: 1182 KDK + 1006 GRZ).
 - **FHIRPath date rules complete**: rules 6/7 now enumerate the full schema-derived set of

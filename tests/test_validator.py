@@ -159,6 +159,47 @@ def test_tnm_code_only_equivalent(v, onc):
     assert "kdk-5-tnm-one-each" in prim and prim == fhir      # both read category from `code`, not just display
 
 
+# --- CLI: verbosity levels, exit codes, JSON output ---
+
+def _mk(tmp_path, onc, mutate):
+    d = copy.deepcopy(onc)
+    mutate(d)
+    p = tmp_path / "case.json"
+    p.write_text(json.dumps(d))
+    return str(p)
+
+
+def test_cli_exit_codes(tmp_path, onc, capsys):
+    from genomde_dk_validator.cli import main
+    (tmp_path / "a").mkdir()
+    clean = _mk(tmp_path / "a", onc, lambda d: None)
+    assert main([clean]) == 0                                     # clean -> 0
+    (tmp_path / "b").mkdir()
+    warn = _mk(tmp_path / "b", onc, lambda d: d.__setitem__("bogusField", 1))
+    assert main([warn]) == 3                                      # warning only -> 3
+    assert main(["--strict", warn]) == 1                          # --strict promotes warning -> error -> 1
+    (tmp_path / "c").mkdir()
+    err = _mk(tmp_path / "c", onc, lambda d: d.pop("metaData"))
+    assert main([err]) == 1                                       # schema error -> 1
+    assert main([str(tmp_path / "does-not-exist.json")]) == 2     # no input -> 2
+
+
+def test_cli_verbosity_gates_warnings(tmp_path, onc, capsys):
+    from genomde_dk_validator.cli import main
+    warn = _mk(tmp_path, onc, lambda d: d.__setitem__("bogusField", 1))
+    main([warn]); assert "bogusField" not in capsys.readouterr().out   # hidden by default
+    main(["-v", warn]); assert "bogusField" in capsys.readouterr().out # shown with -v
+
+
+def test_cli_output_file(tmp_path, onc, capsys):
+    from genomde_dk_validator.cli import main
+    src = _mk(tmp_path, onc, lambda d: None)
+    out = tmp_path / "report.json"
+    assert main(["-o", str(out), src]) == 0
+    report = json.loads(out.read_text())
+    assert report["files"] == 1 and "summary" in report and report["exit_code"] == 0
+
+
 def test_date_tuple_rejects_junk():
     from genomde_dk_validator.rules import _date_tuple
     assert _date_tuple("2026-04-21") == (2026, 4, 21)

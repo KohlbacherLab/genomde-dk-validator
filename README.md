@@ -23,9 +23,14 @@ genomde-dk-validator FILE|DIR|GLOB ...     # schema + unknown-field check (recur
   --kdk-rules         # + BfArM KDK QS rules   (oncology / rare-disease)
   --grz-rules         # + BfArM GRZ QS rules
   --rules-config F    # JSON of external inputs for rules (see below)
-  --json | -q         # machine-readable report | summary only
+  -v / -vv            # also show warnings / also show info (default: errors only)
+  -o FILE             # write the JSON report to FILE (all findings) instead of text
+  --json | -q         # JSON report to stdout | verdict + summary only
 ```
-Exit `0` all pass · `1` a file failed (schema error, rule error, or `--strict` unknowns) · `2` no input.
+Exit codes: `0` clean · `3` warnings only (e.g. unknown fields, non-strict) · `1` errors
+(schema error, rule error, or `--strict` unknowns) · `2` usage error / no input.
+Findings have three levels — **error** (always shown), **warning** (unknown fields; `-v`),
+**info** (rules skipped for missing `--rules-config`; `-vv`).
 Branch is auto-detected → root schema:
 
 | detected by | branch | schema |
