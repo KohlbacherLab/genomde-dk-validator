@@ -35,11 +35,11 @@
 
     {"id": "kdk-7-dates-before-decision", "primitive": "all_dates_before_by_condition", "severity": "error",
      "source": "QS durch KDK v01.2, Tabelle 1, Kriterium 7 — 'Datumsangaben werden in Relation zum Typ der Meldung geprüft': für alle 'date'-Felder (außer researchConsents/presentationDate und submission/date) — type=initial => vor molecularBoardDecisionDate; type=followup => vor FollowUpDate.",
-     "doc": "submission.type=initial: all date fields precede molecularBoardDecisionDate; followup: precede the follow-up date. Excludes researchConsents.presentationDate + submission.date (+ the metaData anchor). type=test -> no anchor -> skipped. Multi-follow-up anchor = first (v0.1 limitation).",
+     "doc": "submission.type=initial: all date fields precede molecularBoardDecisionDate; followup: precede the follow-up date (OD or RD). The engine auto-excludes the active anchor's own pointer(s); per QS only researchConsents.presentationDate + submission.date are additionally excepted. type=test -> no anchor -> skipped. When several follow-ups exist the first resolved follow-up date is the anchor (v0.1 limitation).",
      "params": {"condition": "metaData.submission.type",
                 "cases": {"initial": "metaData.molecularBoardDecisionDate",
-                          "followup": "followUp.followUpOds.0.followUpDate"},
-                "exclude_regex": ["/researchConsents/\\d+/presentationDate$", "^/metaData/submission/date$", "^/metaData/molecularBoardDecisionDate$"]}},
+                          "followup": ["followUp.followUpOds[].followUpDate", "followUp.followUpRds[].followUpDate"]},
+                "exclude_regex": ["/researchConsents/\\d+/presentationDate$", "^/metaData/submission/date$"]}},
 
     {"id": "kdk-8-presentation-le-signature", "primitive": "date_order", "severity": "error",
      "source": "QS durch KDK v01.2, Tabelle 1, Kriterium 8 — 'Das Datum der Aushändigung der Teilnahmeerklärung darf nicht nach dem Datum der Unterschrift liegen': mvConsent/presentationDate <= mvConsent/scope[].date.",
@@ -53,7 +53,7 @@
 
     {"id": "kdk-9b-consented-actions-after-consent", "primitive": "dates_after", "severity": "error",
      "source": "QS durch KDK v01.2, Tabelle 1, Kriterium 9 (Teil 2) — die aufgezählten Datumsangaben (Meldung, Fallkonferenz carePlan*, Follow-Up, weitere Diagnosen, letzter Kontakt, Sterbedatum, Therapie-Start/Ende/Response, präventive Maßnahmen) müssen hinter dem Datum der Einwilligung (mvConsent/scope[].date) liegen.",
-     "doc": "dated actions/decisions requiring prior consent must lie on/after the MV consent signature date. Anchor = first scope date (v0.1 limitation; should filter permit/mvSequencing scope).",
+     "doc": "dated actions/decisions requiring prior consent must lie on/after the MV consent signature date. v0.1 limitation: the anchor is the FIRST mvConsent.scope[].date, not filtered to the permit/mvSequencing scope — refine with a scope selector.",
      "params": {"anchor": "metaData.mvConsent.scope[].date",
                 "paths": ["metaData.submission.date",
                           "plan.carePlanOd.molecularBoardDecisionDate",

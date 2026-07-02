@@ -203,19 +203,28 @@ def _not_before_birth(inst, pr, ctx):
 @primitive("all_dates_before_by_condition")
 def _before_anchor(inst, pr, ctx):
     cond = next((v for _, v in _vals(inst, pr["condition"])), None)
-    anchor_path = pr["cases"].get(cond)
-    if not anchor_path:
+    spec = pr["cases"].get(cond)
+    if not spec:
         return  # condition value has no anchor (e.g. 'test') -> skip
-    anchor = next((_date_tuple(v) for _, v in _vals(inst, anchor_path)), None)
-    if not anchor:
+    paths = [spec] if isinstance(spec, str) else spec   # a case may list OD + RD anchors
+    anchor_ptrs, anchor = set(), None
+    for ap in paths:
+        for ptr, v in _vals(inst, ap):
+            anchor_ptrs.add(ptr)
+            t = _date_tuple(v)
+            if t and anchor is None:
+                anchor = t
+    if anchor is None:
         return
     excl = tuple(pr.get("exclude_regex", []))
     for ptr, v in ctx.date_fields(inst):
+        if ptr in anchor_ptrs:            # never compare the active anchor against itself
+            continue
         if any(re.search(rx, ptr) for rx in excl):
             continue
         t = _date_tuple(v)
         if t and t > anchor:
-            yield RuleFinding("", "", "", f"date {v} at {ptr} not before {anchor_path} "
+            yield RuleFinding("", "", "", f"date {v} at {ptr} not before {paths} "
                               f"(submission type {cond})", ptr)
 
 
@@ -225,7 +234,10 @@ def _tnm_category(e):
     if not isinstance(e, dict):
         return None
     for s in (e.get("display"), e.get("text"), e.get("code")):
-        m = re.match(r"^[cpyra]*([TNM])", (s or "").strip())
+        # find a TNM notation token anywhere: optional staging prefix (c/p/y/r/a) + T|N|M +
+        # a value char (digit / x / i(s)). Works for 'T3', 'cT1a1', 'cN1', 'pM1', and verbose
+        # SNOMED displays like 'American Joint Committee on Cancer cT1 ...'.
+        m = re.search(r"(?:^|[^A-Za-z])[cpyra]{0,2}([TNM])[0-9xXi]", s or "")
         if m:
             return m.group(1).upper()
     return None
