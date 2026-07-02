@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.2
+- Docs: list the `--show` flag, correct the `-q` description for the minimal-default output. No behavior change.
+
 ## 1.1.1
 - Minimal default output: without `-v`, a clean run prints just `PASS` and a failing run prints only
   the error findings + `FAIL (N)`. The header, summary block, and "lower-severity hidden" hint now
