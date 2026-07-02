@@ -52,7 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("-o", "--output", metavar="FILE",
                     help="write the JSON report to FILE (all findings, regardless of -v) instead of text")
     ap.add_argument("--quiet", "-q", action="store_true",
-                    help="verdict + summary only; no per-finding list")
+                    help="verdict only; no per-finding list (the summary needs -v)")
     ap.add_argument("--show", type=int, default=40, help="max findings listed in text mode (raise it or use -o for all)")
     a = ap.parse_args(argv)
 

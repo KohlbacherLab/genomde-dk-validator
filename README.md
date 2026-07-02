@@ -25,7 +25,8 @@ genomde-dk-validator FILE|DIR|GLOB ...     # schema + unknown-field check (recur
   --rules-config F    # JSON of external inputs for rules (see below)
   -v / -vv            # also show warnings / also show info (default: errors only)
   -o FILE             # write the JSON report to FILE (all findings) instead of text
-  --json | -q         # JSON report to stdout | verdict + summary only
+  --json | -q         # JSON report to stdout | verdict only (no per-finding list)
+  --show N            # cap findings listed in text mode (default 40; use -o for all)
 ```
 Exit codes: `0` clean · `3` warnings only (e.g. unknown fields, non-strict) · `1` errors
 (schema error, rule error, or `--strict` unknowns) · `2` usage error / no input.
