@@ -1,24 +1,27 @@
 {
   "about": {
     "file": "grz.rules.json",
-    "source": "BfArM 'Qualitätssicherung der eingelieferten Genomdaten durch Genomrechenzentren (GRZ)', MV GenomSeq, Version 01.4 (01.06.2026), Abschnitt A / Tabelle 1.",
+    "source_document": "BfArM 'Qualitätssicherung der eingelieferten Genomdaten durch Genomrechenzentren (GRZ) im MV GenomSeq', Version 01.4 (Gültig ab 01.06.2026). Section A 'Vollständige Grundprüfung', Tabelle 1 (Kriterien 1-3). Local copy: knowledge/bfarm-qs/Qs-GRZ.pdf (in the genomDE2FHIR repo).",
     "applies_to": "GRZ Datenkranz (top-level submission + donors[]). Off unless enabled with --grz-rules.",
-    "scope_note": "Only the JSON-checkable Grundprüfung criteria (Tabelle 1) are encoded. The other Grundprüfung items (file sizes, checksum agreement, read counts R1=R2 / lines divisible by 4) and the Detailprüfung QC thresholds (Tabelle 2/3: mean depth, read length, %bases>=Q30/Q20, target-region coverage) operate on the raw FASTQ/BAM data or on reported lab-QC metrics against a context matrix (diseaseType x libraryType x tumor/normal/germline) and are out of scope for a pure-JSON validator — run the GRZ QC pipeline (github.com/BfArM-MVH/GRZ_QC_Workflow) for those.",
-    "engine": "primitives are implemented in rules.py; the engine reads id/primitive/severity/params only."
+    "scope_note": "Only the JSON-checkable Grundprüfung criteria (Tabelle 1) are encoded. The other Grundprüfung items (file sizes, checksum agreement, read counts R1=R2 / lines divisible by 4) and the Detailprüfung QC thresholds (Tabelle 2/3: mean depth, read length, %bases>=Q30/Q20, target-region coverage) operate on the raw FASTQ/BAM data or on a context matrix (diseaseType x libraryType x tumor/normal/germline) and are out of scope for a pure-JSON validator — run the GRZ QC pipeline (github.com/BfArM-MVH/GRZ_QC_Workflow) for those.",
+    "engine": "primitives are implemented in rules.py; the engine reads id/primitive/severity/params only ('source'/'doc'/'fix' are documentation)."
   },
   "rules": [
     {"id": "grz-1-rare-librarytype", "primitive": "enum_by_condition", "severity": "error",
-     "doc": "Tabelle 1 #1: for rare disease, panel and WES are excluded -> donors[].labData[].libraryType in {wgs, wgs_lr}. (Note: GRZ excludes 'none', unlike KDK criterion 10.)",
+     "source": "QS durch GRZ v01.4, Tabelle 1, Kriterium 1 — 'Bei Datensätzen zu seltenen Erkrankungen ist eine Panelsequenzierung und WES ausgeschlossen': submission.diseaseType=rare => donors.labData.libraryType in {wgs, wgs_lr}; jeder andere Wert ist ungültig.",
+     "doc": "for rare disease, panel and WES excluded -> donors[].labData[].libraryType in {wgs, wgs_lr}. NB GRZ excludes 'none', unlike KDK criterion 10.",
      "params": {"condition": "submission.diseaseType", "equals": "rare",
                 "paths": ["donors[].labData[].libraryType"],
                 "allowed": ["wgs", "wgs_lr"]}},
 
     {"id": "grz-2-center-id", "primitive": "id_equals_config", "severity": "error",
-     "doc": "Tabelle 1 #2: submission.genomicDataCenterId must equal the receiving GRZ's own id. Supply via --rules-config {genomic_data_center_id:'...'}.",
+     "source": "QS durch GRZ v01.4, Tabelle 1, Kriterium 2 — 'Die vom Leistungserbringer angegebene ID des Datenknotens muss mit der eigenen ID übereinstimmen': submission.genomicDataCenterId == eigene GRZ-ID.",
+     "doc": "submission.genomicDataCenterId must equal the receiving GRZ's own id. Supply via --rules-config {genomic_data_center_id:'...'}.",
      "params": {"path": "submission.genomicDataCenterId", "config_key": "genomic_data_center_id"}},
 
     {"id": "grz-3-noscope-justification", "primitive": "enum_allowed", "severity": "error",
-     "doc": "Tabelle 1 #3: donors[].researchConsents[].noScopeJustification limited to patient-related reasons; the two technical/organizational values are errors.",
+     "source": "QS durch GRZ v01.4, Tabelle 1, Kriterium 3 — 'Bei der Angabe der Begründung der fehlenden Forschungseinwilligung sind ausschließlich patientenbezogene Gründe zulässig' (die zwei technischen/organisatorischen Werte werden als Fehler gewertet).",
+     "doc": "donors[].researchConsents[].noScopeJustification limited to the four patient-related reasons.",
      "params": {"path": "donors[].researchConsents[].noScopeJustification",
                 "allowed": ["patient unable to consent", "patient refuses to sign consent",
                             "patient did not return consent documents", "other patient-related reason"]}}
