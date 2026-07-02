@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0
+- **FHIRPath invariant rule backend** (`--fhirpath`, optional `[fhirpath]` extra): the BfArM QS
+  criteria authored as FHIR-`constraint`-style invariants (key/severity/human/expression/source) and
+  evaluated over the plain Datenkranz JSON via `fhirpathpy` — the DK isn't FHIR, but core FHIRPath is
+  data-model-agnostic. Produces **identical results to the primitive engine on the full corpus**
+  (1098 KDK + 1000 GRZ). Files: `rules/{kdk,grz}.invariants.json`. Authoring notes captured:
+  cross-field refs inside `all()`/`where()` must use `%context`; optional fields need empty-guards;
+  "all date-format field" rules enumerate the schema's date paths (no reliable `descendants()`).
+
 ## 0.9.2
 - Unknown-field detection ignores all `$`-prefixed JSON Schema / structural meta-keys (`$schema`, `$id`, `$ref`, `$comment`, …) at any level — they are annotations/hints, not Datenkranz data fields. (Schema validation itself is unchanged: it uses `jsonschema` and already permits them since the BfArM schemas don't set `additionalProperties:false`.)
 

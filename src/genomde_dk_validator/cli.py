@@ -38,6 +38,9 @@ def main(argv: list[str] | None = None) -> int:
                     help="enforce the BfArM KDK quality-assurance semantic rules (oncology/rare-disease)")
     ap.add_argument("--grz-rules", action="store_true",
                     help="enforce the BfArM GRZ quality-assurance semantic rules")
+    ap.add_argument("--fhirpath", action="store_true",
+                    help="evaluate the rules as FHIRPath invariants (needs the 'fhirpathpy' extra) "
+                         "instead of the built-in primitive engine")
     ap.add_argument("--rules-config", metavar="FILE",
                     help="JSON with external inputs for rules (e.g. {\"clinical_data_node_id\":\"...\", "
                          "\"genomic_data_center_id\":\"...\", \"le_ids\":[...]})")
@@ -68,8 +71,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no JSON files found under {a.paths}", file=sys.stderr)
         return 2
 
+    if a.fhirpath and not ruleset:
+        print("--fhirpath only applies with --kdk-rules/--grz-rules", file=sys.stderr)
+        return 2
+    engine = "fhirpath" if a.fhirpath else "primitive"
     v = DatenkranzValidator(check_unknown=not a.no_unknown)
-    results = [v.validate_file(f, rules=ruleset, rules_config=rules_config) for f in files]
+    results = [v.validate_file(f, rules=ruleset, rules_config=rules_config, rules_engine=engine)
+               for f in files]
 
     n_err = sum(1 for r in results if r.schema_errors)
     n_unknown = sum(1 for r in results if r.unknown_fields)

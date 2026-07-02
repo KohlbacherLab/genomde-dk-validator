@@ -8,4 +8,4 @@ from .validator import (
 )
 
 __all__ = ["DatenkranzValidator", "Result", "Finding", "classify", "ROOTS", "__version__"]
-__version__ = "0.9.2"
+__version__ = "0.10.0"

@@ -122,6 +122,21 @@ def test_hostile_input_no_crash(v, bad):
     assert r.branch in ("grz", "oncology", "rare-disease", "legacy-variant", "unknown")
 
 
+def test_fhirpath_engine_equivalent_to_primitive(v, onc):
+    prim = {f.rule_id for f in v.validate(onc, rules="kdk", rules_engine="primitive").rule_errors}
+    fhir = {f.rule_id for f in v.validate(onc, rules="kdk", rules_engine="fhirpath").rule_errors}
+    assert prim == fhir
+
+
+def test_fhirpath_config_skip_and_enforce(v, onc):
+    skips = {f.rule_id for f in v.validate(onc, rules="kdk", rules_engine="fhirpath").rule_findings
+             if f.level == "info"}
+    assert "kdk-11-node-id" in skips          # skipped without config
+    errs = {f.rule_id for f in v.validate(onc, rules="kdk", rules_engine="fhirpath",
+                                          rules_config={"clinical_data_node_id": "WRONG"}).rule_errors}
+    assert "kdk-11-node-id" in errs           # enforced with config
+
+
 def test_date_tuple_rejects_junk():
     from genomde_dk_validator.rules import _date_tuple
     assert _date_tuple("2026-04-21") == (2026, 4, 21)

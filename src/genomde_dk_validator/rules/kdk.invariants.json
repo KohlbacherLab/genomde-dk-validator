@@ -1,0 +1,98 @@
+{
+ "about": {
+  "file": "kdk.invariants.json",
+  "representation": "FHIRPath invariants (FHIR ElementDefinition.constraint style: key/severity/human/expression/source) evaluated over the plain KDK Datenkranz JSON with fhirpathpy — the DK is not FHIR, but core FHIRPath is data-model-agnostic. Each expression MUST evaluate to boolean true for a valid case. %context = the document root; config values (le_ids, clinical_data_node_id) are passed as %variables and gated by requires_config.",
+  "source_document": "BfArM 'QS durch KDK' v01.2, Tabelle 1, Kriterien 1-12 (knowledge/bfarm-qs/Qs-KDK.pdf).",
+  "note": "Criteria 6/7 enumerate the date-format paths explicitly (fhirpathpy lacks a reliable descendants()); criterion 4 (terminology) stays with the schema tooling.",
+  "empty_handling": "FHIRPath invariants guard optional fields (X.empty() or …, or (cond and anchor.exists()) implies …): an absent optional value must not fail a rule, matching the primitive engine which skips missing values.",
+  "date_paths_note": "The 'all date-format fields' rules (6,7) enumerate the complete set of date-typed instance paths (fhirpathpy has no reliable descendants()); this list is derived from the schema's format:date leaves and must be updated if the schema adds date fields."
+ },
+ "invariants": [
+  {
+   "key": "kdk-1-age",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K1",
+   "human": "Age at report time must be 0-130 years.",
+   "expression": "(metaData.submission.date.substring(0,4).toInteger() - metaData.birthDate.substring(0,4).toInteger()) >= 0 and (metaData.submission.date.substring(0,4).toInteger() - metaData.birthDate.substring(0,4).toInteger()) <= 130"
+  },
+  {
+   "key": "kdk-2-le-id",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K2",
+   "requires_config": "le_ids",
+   "human": "submitterId must be a known 64e LE id.",
+   "expression": "metaData.submission.submitterId in %le_ids"
+  },
+  {
+   "key": "kdk-3-index-consent-sequencing",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K3",
+   "human": "Index must consent to sequencing (permit + mvSequencing).",
+   "expression": "metaData.mvConsent.scope.where(type='permit' and domain='mvSequencing').exists()"
+  },
+  {
+   "key": "kdk-5-tnm-one-each",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K5",
+   "human": "TNM must have exactly one T, one N and one M.",
+   "expression": "case.diagnosisOd.tnmClassifications.exists() implies (case.diagnosisOd.tnmClassifications.where(display.matches('^[cpyra]*T[0-9xXis]')).count() = 1 and case.diagnosisOd.tnmClassifications.where(display.matches('^[cpyra]*N[0-9xXis]')).count() = 1 and case.diagnosisOd.tnmClassifications.where(display.matches('^[cpyra]*M[0-9xXis]')).count() = 1)"
+  },
+  {
+   "key": "kdk-6-no-date-before-birth",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K6",
+   "human": "No date may lie before birthDate.",
+   "expression": "(case.diagnosisOd.additionalDiagnoses.date | case.diagnosisOd.mainDiagnosis.date | case.diagnosisRd.molecularBoardDecisionDate | case.priorDiagnostics.date | case.priorProcedures.therapyEndDate | case.priorProcedures.therapyStartDate | followUp.followUpOds.deathDate | followUp.followUpOds.followUpDate | followUp.followUpOds.lastContactDate | followUp.followUpOds.preventiveMeasures.preventiveMeasureDate | followUp.followUpOds.therapies.therapyEndDate | followUp.followUpOds.therapies.therapyResponseDate | followUp.followUpOds.therapies.therapyStartDate | followUp.followUpRds.followUpDate | metaData.molecularBoardDecisionDate | metaData.mvConsent.presentationDate | metaData.mvConsent.scope.date | metaData.researchConsents.presentationDate | metaData.submission.date | plan.carePlanOd.molecularBoardDecisionDate | plan.carePlanRd.molecularBoardDecisionDate).all($this >= %context.metaData.birthDate)"
+  },
+  {
+   "key": "kdk-7-dates-before-decision",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K7",
+   "human": "For initial submissions all dates precede molecularBoardDecisionDate; for followup, the follow-up date.",
+   "expression": "(metaData.submission.type = 'initial' implies (case.diagnosisOd.additionalDiagnoses.date | case.diagnosisOd.mainDiagnosis.date | case.diagnosisRd.molecularBoardDecisionDate | case.priorDiagnostics.date | case.priorProcedures.therapyEndDate | case.priorProcedures.therapyStartDate | followUp.followUpOds.deathDate | followUp.followUpOds.followUpDate | followUp.followUpOds.lastContactDate | followUp.followUpOds.preventiveMeasures.preventiveMeasureDate | followUp.followUpOds.therapies.therapyEndDate | followUp.followUpOds.therapies.therapyResponseDate | followUp.followUpOds.therapies.therapyStartDate | followUp.followUpRds.followUpDate | metaData.molecularBoardDecisionDate | metaData.mvConsent.presentationDate | metaData.mvConsent.scope.date | plan.carePlanOd.molecularBoardDecisionDate | plan.carePlanRd.molecularBoardDecisionDate).all($this <= %context.metaData.molecularBoardDecisionDate)) and ((metaData.submission.type = 'followup' and (followUp.followUpOds.followUpDate | followUp.followUpRds.followUpDate).exists()) implies (case.diagnosisOd.additionalDiagnoses.date | case.diagnosisOd.mainDiagnosis.date | case.diagnosisRd.molecularBoardDecisionDate | case.priorDiagnostics.date | case.priorProcedures.therapyEndDate | case.priorProcedures.therapyStartDate | followUp.followUpOds.deathDate | followUp.followUpOds.followUpDate | followUp.followUpOds.lastContactDate | followUp.followUpOds.preventiveMeasures.preventiveMeasureDate | followUp.followUpOds.therapies.therapyEndDate | followUp.followUpOds.therapies.therapyResponseDate | followUp.followUpOds.therapies.therapyStartDate | followUp.followUpRds.followUpDate | metaData.molecularBoardDecisionDate | metaData.mvConsent.presentationDate | metaData.mvConsent.scope.date | plan.carePlanOd.molecularBoardDecisionDate | plan.carePlanRd.molecularBoardDecisionDate).all($this <= (%context.followUp.followUpOds.followUpDate | %context.followUp.followUpRds.followUpDate).first()))"
+  },
+  {
+   "key": "kdk-8-presentation-le-signature",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K8",
+   "human": "mvConsent.presentationDate must not be after the signature date.",
+   "expression": "metaData.mvConsent.presentationDate.empty() or metaData.mvConsent.scope.date.all(%context.metaData.mvConsent.presentationDate <= $this)"
+  },
+  {
+   "key": "kdk-9a-decision-after-consent",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K9",
+   "human": "Board decision must not precede MV consent signature.",
+   "expression": "metaData.mvConsent.scope.date.all($this <= %context.metaData.molecularBoardDecisionDate)"
+  },
+  {
+   "key": "kdk-9b-consented-actions-after-consent",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K9",
+   "human": "Consent-gated dates must lie on/after the MV consent signature.",
+   "expression": "(metaData.submission.date | plan.carePlanOd.molecularBoardDecisionDate | plan.carePlanRd.molecularBoardDecisionDate | followUp.followUpOds.followUpDate | followUp.followUpOds.additionalDiagnoses.date | followUp.followUpOds.lastContactDate | followUp.followUpOds.deathDate | followUp.followUpOds.therapies.therapyStartDate | followUp.followUpOds.therapies.therapyEndDate | followUp.followUpOds.therapies.therapyResponseDate | followUp.followUpOds.preventiveMeasures.preventiveMeasureDate | followUp.followUpRds.followUpDate | followUp.followUpRds.deathDate).all($this >= %context.metaData.mvConsent.scope.date.first())"
+  },
+  {
+   "key": "kdk-10-rare-librarytype",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K10",
+   "human": "Rare disease excludes panel/WES: libraryType in {wgs, wgs_lr, none}.",
+   "expression": "metaData.submission.diseaseType = 'rare' implies (case.diagnosisOd.libraryType | case.diagnosisRd.libraryType).all($this in ('wgs'|'wgs_lr'|'none'))"
+  },
+  {
+   "key": "kdk-11-node-id",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K11",
+   "requires_config": "clinical_data_node_id",
+   "human": "clinicalDataNodeId must equal the receiving KDK's own id.",
+   "expression": "metaData.submission.clinicalDataNodeId = %clinical_data_node_id"
+  },
+  {
+   "key": "kdk-12-noscope-justification",
+   "severity": "error",
+   "source": "QS-KDK v01.2 T1 K12",
+   "human": "noScopeJustification limited to the four patient-related reasons.",
+   "expression": "metaData.researchConsents.noScopeJustification.all($this in ('patient unable to consent'|'patient refuses to sign consent'|'patient did not return consent documents'|'other patient-related reason'))"
+  }
+ ]
+}

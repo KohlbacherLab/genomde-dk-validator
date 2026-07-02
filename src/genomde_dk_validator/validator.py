@@ -323,7 +323,7 @@ class DatenkranzValidator:
         self.check_unknown = check_unknown
 
     def validate(self, dk: Any, name: str = "<data>", rules: str | None = None,
-                 rules_config: dict | None = None) -> Result:
+                 rules_config: dict | None = None, rules_engine: str = "primitive") -> Result:
         branch = classify(dk)
         res = Result(file=name, branch=branch)
         if branch not in ROOTS:
@@ -341,6 +341,9 @@ class DatenkranzValidator:
             expected = RULESET_BRANCHES.get(rules, set())
             if branch not in expected:
                 res.rule_findings.append(self._sanity(rules, branch))
+            elif rules_engine == "fhirpath":
+                from . import invariants as _inv
+                res.rule_findings.extend(_inv.run_invariants(dk, rules, rules_config))
             else:
                 from . import rules as _rules
                 res.rule_findings.extend(_rules.run_rules(self, dk, branch, rules, rules_config))
@@ -353,7 +356,8 @@ class DatenkranzValidator:
                            f"--{ruleset}-rules requested but this is not a {ruleset.upper()} "
                            f"Datenkranz (detected branch: {branch})")
 
-    def validate_file(self, path, rules: str | None = None, rules_config: dict | None = None) -> Result:
+    def validate_file(self, path, rules: str | None = None, rules_config: dict | None = None,
+                      rules_engine: str = "primitive") -> Result:
         import pathlib
         p = pathlib.Path(path)
         try:
@@ -363,7 +367,7 @@ class DatenkranzValidator:
             r = Result(file=str(p), branch="unreadable")
             r.schema_errors.append(Finding("schema", "(file)", f"unreadable: {e}"))
             return r
-        res = self.validate(dk, name=str(p), rules=rules, rules_config=rules_config)
+        res = self.validate(dk, name=str(p), rules=rules, rules_config=rules_config, rules_engine=rules_engine)
         smap = _source_map(text)          # attach input-file line/col to every finding
         for f in (*res.schema_errors, *res.unknown_fields, *res.rule_findings):
             ptr = _to_pointer(f.path)

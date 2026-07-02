@@ -56,6 +56,19 @@ KDK criteria 1,3,5,6,7,8,9,10,12 enforced (2,11 need config; 4 = terminology, ou
 Tabelle-1 (rare→libraryType, centre-id, noScopeJustification). GRZ Detailprüfung QC (depth/quality)
 runs on FASTQ/BAM, not JSON.
 
+**Two interchangeable rule backends** (same criteria, same results — verified identical on the whole
+synthetic corpus, 1098 KDK + 1000 GRZ):
+- **primitive** (default) — the built-in engine, no extra dependency.
+- **FHIRPath invariants** (`--fhirpath`, needs the `fhirpath` extra) — each rule authored like a FHIR
+  `ElementDefinition.constraint` (`key`/`severity`/`human`/`expression`) evaluated over the plain
+  Datenkranz JSON via `fhirpathpy`. The DK is not FHIR, but core FHIRPath is data-model-agnostic;
+  this aligns the QS rules with the FHIRPath invariants used on the MII-profile side. Files:
+  `rules/{kdk,grz}.invariants.json`. (`%context` = document root; config values are `%variables`.)
+  ```bash
+  pip install 'genomde-dk-validator[fhirpath]'
+  genomde-dk-validator --kdk-rules --fhirpath kdk_data/
+  ```
+
 ### Adding / editing rules
 Rules live in [`src/genomde_dk_validator/rules/`](src/genomde_dk_validator/rules/)
 (`kdk.rules.json`, `grz.rules.json`). Each is an instance of a *primitive* implemented in

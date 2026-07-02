@@ -1,0 +1,31 @@
+{
+ "about": {
+  "file": "grz.invariants.json",
+  "representation": "FHIRPath invariants over the plain GRZ Datenkranz JSON (fhirpathpy). See kdk.invariants.json about.",
+  "source_document": "BfArM 'QS durch GRZ' v01.4, Tabelle 1 (knowledge/bfarm-qs/Qs-GRZ.pdf)."
+ },
+ "invariants": [
+  {
+   "key": "grz-1-rare-librarytype",
+   "severity": "error",
+   "source": "QS-GRZ v01.4 T1 K1",
+   "human": "Rare disease excludes panel/WES: donors.labData.libraryType in {wgs, wgs_lr}.",
+   "expression": "submission.diseaseType = 'rare' implies donors.labData.libraryType.all($this in ('wgs'|'wgs_lr'))"
+  },
+  {
+   "key": "grz-2-center-id",
+   "severity": "error",
+   "source": "QS-GRZ v01.4 T1 K2",
+   "requires_config": "genomic_data_center_id",
+   "human": "genomicDataCenterId must equal the receiving GRZ's own id.",
+   "expression": "submission.genomicDataCenterId = %genomic_data_center_id"
+  },
+  {
+   "key": "grz-3-noscope-justification",
+   "severity": "error",
+   "source": "QS-GRZ v01.4 T1 K3",
+   "human": "noScopeJustification limited to the four patient-related reasons.",
+   "expression": "donors.researchConsents.noScopeJustification.all($this in ('patient unable to consent'|'patient refuses to sign consent'|'patient did not return consent documents'|'other patient-related reason'))"
+  }
+ ]
+}
