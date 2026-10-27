@@ -96,8 +96,9 @@ a bad `primitive` name surfaces as a warning finding.
 ## Schema provenance
 Vendored under `src/genomde_dk_validator/schemas/`, byte-identical to upstream
 ([`schemas/PROVENANCE.md`](src/genomde_dk_validator/schemas/PROVENANCE.md)):
-KDK [MVGenomseq_KDK](https://github.com/BfArM-MVH/MVGenomseq_KDK) v2.3 (content 1.7.1);
-GRZ [MVGenomseq_GRZ](https://github.com/BfArM-MVH/MVGenomseq_GRZ) v1.3.0 (content 1.2.3).
+KDK [MVGenomseq_KDK](https://github.com/BfArM-MVH/MVGenomseq_KDK) v2.3 + `main` `fe724ff` (content 1.7.1);
+GRZ [MVGenomseq_GRZ](https://github.com/BfArM-MVH/MVGenomseq_GRZ) v1.3.1 (content 1.2.3). Both accept embedded-consent
+`schemaVersion` 2025.0.1–2026.0.1.
 To update: replace the files from the upstream tag and bump `PROVENANCE.md`.
 
 ## Development

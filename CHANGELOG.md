@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3
+- Schemas: KDK `main` `fe724ff` (v2.3 + consent fix), GRZ v1.3.1. The embedded research consent's `schemaVersion`
+  now accepts 2025.0.1–2026.0.1 (was 2025.0.1 only). No other schema or rule change.
+
 ## 1.1.2
 - Docs: list the `--show` flag, correct the `-q` description for the minimal-default output. No behavior change.
 

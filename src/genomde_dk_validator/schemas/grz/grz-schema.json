@@ -1,6 +1,6 @@
 {
   "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "version":"1.3.0",
+  "version":"1.3.1",
   "title":"Metadata Submission Genomic Data Center (GRZ)",
   "description":"General metadata schema for submissions to the GRZ",
   "type":"object",
@@ -223,7 +223,12 @@
                   "type":"string",
                   "description":"Schema version of de.medizininformatikinitiative.kerndatensatz.consent",
                   "enum":[
-                    "2025.0.1"
+                    "2025.0.1",
+                    "2025.0.2",
+                    "2025.0.3",
+                    "2025.0.4",
+                    "2026.0.0",
+                    "2026.0.1"
                   ]
                 },
                 "presentationDate":{

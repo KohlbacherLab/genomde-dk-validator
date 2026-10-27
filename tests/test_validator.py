@@ -216,3 +216,20 @@ def test_date_tuple_rejects_junk():
     assert _date_tuple("2026-99-99x") is None
     assert _date_tuple("2026-13") is None
     assert _date_tuple("notadate") is None
+
+
+@pytest.mark.parametrize("version, ok", [("2026.0.1", True), ("2025.0.3", True), ("2027.0.0", False)])
+def test_consent_schema_version_enum(v, onc, version, ok):
+    # KDK fe724ff / GRZ v1.3.1: researchConsents[].schemaVersion 2025.0.1-2026.0.1
+    d = copy.deepcopy(onc)
+    for rc in d["metaData"]["researchConsents"]:
+        rc["schemaVersion"] = version
+    g = json.loads((FIX / "grz_valid.json").read_text())
+    for donor in g["donors"]:
+        for rc in donor.get("researchConsents", []):
+            rc["schemaVersion"] = version
+    for rec in (d, g):
+        r = v.validate(rec, "x")
+        assert r.ok() is ok, r.schema_errors
+        if not ok:
+            assert any("schemaVersion" in e.path for e in r.schema_errors), r.schema_errors
